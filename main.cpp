@@ -33,9 +33,19 @@ class ALU{
         reg1->load(result);
     };
 
-    void addImmediate(Register & reg1, u_int8_t val){
-        uint8_t result = reg1.read() + val;
-        reg1.load(result);
+    void addImmediate(Register * reg1, u_int8_t val){
+        uint8_t result = reg1->read() + val;
+        reg1->load(result);
+    };
+
+    void sub(Register * reg1, Register * reg2){
+        uint8_t result = reg1->read() - reg2->read();
+        reg1->load(result);
+    };
+
+    void subImmediate(Register * reg1, u_int8_t val){
+        uint8_t result = reg1->read() - val;
+        reg1->load(result);
     };
 
 
@@ -62,7 +72,7 @@ class Arduino{
 
 };
 
-std::string instructions[32] ={"LDI 1 4", "LDI 2 8", "ADD 1 2"};
+std::string instructions[32] ={"LDI 1 8", "INC 1", "DEC 1"};
 Arduino arduino = Arduino();
 
 void instructionReader(std::string inst){
@@ -82,16 +92,30 @@ void instructionReader(std::string inst){
     if (!token.empty()) {
     tokens.push_back(token);
 }
-    
-    if(tokens[0] == "LDI"){
-        int tmpint = std::stoi(tokens[2]);
-        int tmpreg = std::stoi(tokens[1]);
-        arduino.registers[tmpreg]->load(static_cast<int8_t>(tmpint));
-    }else if(tokens[0] == "ADD"){
-        int tmpreg1 = std::stoi(tokens[1]);
-        int tmpreg2 = std::stoi(tokens[2]);
-        arduino.alu.add(arduino.registers[tmpreg1], arduino.registers[tmpreg2]);
+
+const std::string opcode = tokens[0];
+const int tmp1 = std::stoi(tokens[1]);
+
+if(tokens.size() <= 2){
+    if(opcode == "INC"){
+        arduino.alu.addImmediate(arduino.registers[tmp1], 1);
+    }else if(opcode == "DEC"){
+        arduino.alu.subImmediate(arduino.registers[tmp1], 1);
     }
+}else if(tokens.size() >= 3){
+    const int tmp2 = std::stoi(tokens[2]);
+    
+    if(opcode == "LDI"){
+        arduino.registers[tmp1]->load(static_cast<int8_t>(tmp2));
+    }else if(opcode == "ADD"){
+        arduino.alu.add(arduino.registers[tmp1], arduino.registers[tmp2]);
+    }else if(opcode == "MOV"){
+        arduino.registers[tmp1]->load(arduino.registers[tmp2]->read());
+    }else if(opcode == "SUB"){
+        arduino.alu.sub(arduino.registers[tmp1], arduino.registers[tmp2]);
+    }
+    
+}
 }
 
 int main(){
